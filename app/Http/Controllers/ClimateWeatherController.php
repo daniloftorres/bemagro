@@ -15,6 +15,10 @@ use Illuminate\Support\Facades\Log;
  */
 class ClimateWeatherController extends Controller
 {
+    private $apiGeolocationService;
+    private $apiWeatherService;
+    private $climateWeatherService;
+
     /**
      * Initialize the services used in the controller
      * 
@@ -22,12 +26,11 @@ class ClimateWeatherController extends Controller
      * @param ApiWeatherService $apiWeatherService
      * @param ClimateWeatherService $climateWeatherService
      */
-
     public function __construct(
         ApiGeolocationService $apiGeolocationService, 
         ApiWeatherService $apiWeatherService,
-        ClimateWeatherService $climateWeatherService){
-
+        ClimateWeatherService $climateWeatherService
+    ){
         $this->apiGeolocationService = $apiGeolocationService;
         $this->apiWeatherService = $apiWeatherService;
         $this->climateWeatherService = $climateWeatherService;
@@ -39,8 +42,8 @@ class ClimateWeatherController extends Controller
      * @param Request $request
      * @return \Illuminate\View\View|\Illuminate\Http\Response
      */
-    public function fetchWeather(Request $request){
-
+    public function fetchWeather(Request $request)
+    {
         if (empty($request->input('city'))) {
             return $this->returnCityMissingError();
         }
@@ -61,23 +64,22 @@ class ClimateWeatherController extends Controller
     private function processWeatherRequest(Request $request)
     {
         $city = $request->input('city');
-        $response_weather = $this->apiWeatherService->getWeatherByCity($city);
-        if ($response_weather === null) {
+        $responseWeather = $this->apiWeatherService->getWeatherByCity($city);
+        if ($responseWeather === null) {
             return $this->returnWeatherError();
         }
-        $data_weather = $response_weather;
+        $dataWeather = $responseWeather;
 
-        $response_geolocation = $this->apiGeolocationService->getCoordinatesByCity($city);        
-        if ($response_geolocation === null) {
+        $responseGeolocation = $this->apiGeolocationService->getCoordinatesByCity($city);        
+        if ($responseGeolocation === null) {
             return $this->returnGeolocationError();
         }
         
-        $data_geolocation = $response_geolocation;
+        $dataGeolocation = $responseGeolocation;
         
-        $this->validateWeatherData($data_weather);
-        $this->validateGeolocationData($data_geolocation);
-        
-        $weatherData = $this->prepareWeatherData($request, $data_weather, $data_geolocation);
+        $this->validateWeatherData($dataWeather);
+        $this->validateGeolocationData($dataGeolocation);        
+        $weatherData = $this->prepareWeatherData($request, $dataWeather, $dataGeolocation);        
         return view('climate_weather.index', [
             'weather' => $this->climateWeatherService->saveWeather($weatherData),
             'weatherNotFound' => false,
@@ -122,12 +124,12 @@ class ClimateWeatherController extends Controller
      */
     private function handleWeatherServiceError(\Exception $e)
     {
-        $msg_error = $e->getCode() == 404 
+        $msgError = $e->getCode() == 404 
             ? __('messages.city_not_found') 
             : __('messages.weather_service_unavailable');
 
         return response()->view('errors.custom', [
-            'error' => $msg_error,
+            'error' => $msgError,
             'status' => $e->getCode() ?: 400
         ], $e->getCode() ?: 400);
     }
@@ -157,6 +159,21 @@ class ClimateWeatherController extends Controller
     private function prepareWeatherData(Request $request, array $dataWeather, array $dataGeolocation)
     {
         // Processa os dados recebidos para formatar conforme o necessário para a aplicação
+        /*
+        return [
+            'climateWeatherId' => $dataWeather['id'],
+            'city' => $request->input('city'),
+            'temperature' => $dataWeather['main']['temp'],
+            'weatherCondition' => $dataWeather['weather'][0]['description'],
+            'lat' => $dataGeolocation[0]['lat'],
+            'lon' => $dataGeolocation[0]['lon'],
+            'windSpeed' => $dataWeather['wind']['speed'],
+            'humidity' => $dataWeather['main']['humidity'],
+            'temperatureMin' => $dataWeather['main']['temp_min'],
+            'temperatureMax' => $dataWeather['main']['temp_max']
+        ];
+        */
+        
         return [
             'climate_weather_id' => $dataWeather['id'],
             'city' => $request->input('city'),
@@ -169,6 +186,7 @@ class ClimateWeatherController extends Controller
             'temperature_min' => $dataWeather['main']['temp_min'],
             'temperature_max' => $dataWeather['main']['temp_max']
         ];
+        
     }
 
     /**
@@ -181,7 +199,7 @@ class ClimateWeatherController extends Controller
     {
         $validator = Validator::make($data, [
             'main.temp' => 'required|numeric',
-            #'weather_condition' => 'required|string',
+            #'weatherCondition' => 'required|string',
             'weather.0.description' => 'required|string',
             'wind.speed' => 'required|numeric',
             'main.humidity' => 'required|numeric',
@@ -234,7 +252,7 @@ class ClimateWeatherController extends Controller
 
     /**
      * Display the form to edit climate weather
-     * @param in $id
+     * @param int $id
      * @return \Illuminate\View\View
      */
     public function showEditWeatherForm(int $id){
@@ -245,9 +263,10 @@ class ClimateWeatherController extends Controller
     /**
      * Update climate weather register
      * @param Request $request
+     * @param int $id
      * @return \Illuminate\View\View
      */
-    public function editWeather(Request $request, $id){
+    public function editWeather(Request $request, int $id){
         $weather = ClimateWeather::find($id);
         if ($weather) {
             $weather->update($request->all());
@@ -261,7 +280,7 @@ class ClimateWeatherController extends Controller
      * @param int $id
      * @return \Illuminate\Http\RedirectResponse
      */
-    public function deleteWeather(Request $request, $id){
+    public function deleteWeather(int $id){
         $weather = ClimateWeather::find($id);
         if ($weather){
             $weather->delete();

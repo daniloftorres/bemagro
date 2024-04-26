@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -52,7 +52,7 @@
             </div>
         @endif
         @if (isset($weatherStatus) && !$weatherStatus)
-            <p>{{$weatherMsg}}</p>
+            <p>{{ $weatherMsg }}</p>
         @elseif (isset($weather))
             <h2>Informações do Clima para {{ $weather->city }}</h2>
             <p>Latitude: {{ $weather->lat ?? 'Indisponível' }}</p>
@@ -61,7 +61,7 @@
             <p>Temperatura Mínima: {{ $weather->temperature_min }}°C</p>
             <p>Temperatura Máxima: {{ $weather->temperature_max }}°C</p>
             <p>Humidade: {{ $weather->humidity }}%</p>
-            <p>Velocidade do Vento: {{ $weather->wind_speed }}Km/h</p>
+            <p>Velocidade do Vento: {{ $weather->wind_speed }} km/h</p>
             <p>Condição Climática: {{ $weather->weather_condition }}</p>
         @endif
     </div>

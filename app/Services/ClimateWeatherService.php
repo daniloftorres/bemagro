@@ -14,7 +14,6 @@ use App\Models\ClimateWeather;
 class ClimateWeatherService {
 
     public function saveWeather($data = array()) {
-
         $weather = ClimateWeather::where('climate_weather_id', $data['climate_weather_id'])->first();
         if ($weather) {
             $updateSuccessful = $weather->update($data);
